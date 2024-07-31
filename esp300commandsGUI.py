@@ -4,7 +4,8 @@ import sys
 import time
 import pyvisa
 import serial
-from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QPushButton, QLineEdit, QLabel, QComboBox
+from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLineEdit, QLabel, QComboBox, QFrame
+from PyQt5.QtCore import Qt
 
 class ESP300:
     def __init__(self, adapter, timeout):
@@ -43,30 +44,16 @@ class ESP300:
             self.reconnect()
 
     def move_to(self, axis, position):
-        status = self.query(f"{axis}MD?")
-        if status is None:
-            print("Erro ao verificar o status do eixo.")
-            return
-        if status == "1":  # O eixo está parado
-            self.write(f"{axis}PA{position}")
-            print(f"Comando {axis}PA{position} enviado.")
-            self.write(f"{axis}WS")  # Comando para esperar até o motor parar
-            print(f"Comando {axis}WS enviado.")
-        else:
-            print(f"O eixo {axis} está em movimento. Não é possível enviar o comando de movimento.")
+        self.write(f"{axis}PA{position}")
+        print(f"Comando {axis}PA{position} enviado.")
+        self.write(f"{axis}WS")  # Comando para esperar até o motor parar
+        print(f"Comando {axis}WS enviado.")
 
     def move_relative(self, axis, increment):
-        status = self.query(f"{axis}MD?")
-        if status is None:
-            print("Erro ao verificar o status do eixo.")
-            return
-        if status == "1":  # O eixo está parado
-            self.write(f"{axis}PR{increment}")
-            print(f"Comando {axis}PR{increment} enviado.")
-            self.write(f"{axis}WS")  # Comando para esperar até o motor parar
-            print(f"Comando {axis}WS enviado.")
-        else:
-            print(f"O eixo {axis} está em movimento. Não é possível enviar o comando de movimento relativo.")
+        self.write(f"{axis}PR{increment}")
+        print(f"Comando {axis}PR{increment} enviado.")
+        self.write(f"{axis}WS")  # Comando para esperar até o motor parar
+        print(f"Comando {axis}WS enviado.")
 
     def get_position(self, axis):
         return self.query(f"{axis}TP?")
@@ -86,8 +73,6 @@ class ESP300:
                 time.sleep(2)
                 self.resource.open()
             print("Reconexão realizada.")
-            # Reconfigura o timeout após reconectar
-            self.adapter.timeout = self.timeout if isinstance(self.resource, serial.Serial) else self.timeout * 1000
         except Exception as e:
             print(f"Erro ao tentar reconectar: {e}")
 
@@ -96,7 +81,7 @@ class MainWindow(QMainWindow):
         super().__init__()
 
         self.setWindowTitle("Controle do ESP300")
-        self.setGeometry(100, 100, 400, 400)
+        self.setGeometry(100, 100, 800, 500)  # Tamanho da janela ajustado
 
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
@@ -104,149 +89,229 @@ class MainWindow(QMainWindow):
         self.layout = QVBoxLayout()
         self.central_widget.setLayout(self.layout)
 
+        # Seção geral
+        self.general_frame = QFrame()
+        self.general_frame.setStyleSheet("background-color: lightgray;")  # Cor de fundo do frame geral
+        self.general_layout = QVBoxLayout()
+        self.general_frame.setLayout(self.general_layout)
+        self.layout.addWidget(self.general_frame)
+
         self.connection_label = QLabel("Escolha o método de conexão:")
-        self.layout.addWidget(self.connection_label)
+        self.general_layout.addWidget(self.connection_label)
 
         self.connection_combo = QComboBox()
         self.connection_combo.addItem("Serial (/dev/ttyUSB0)")
         self.connection_combo.addItem("GPIB (GPIB0::5::INSTR)")
-        self.layout.addWidget(self.connection_combo)
+        self.general_layout.addWidget(self.connection_combo)
 
         self.connect_button = QPushButton("Conectar")
+        self.connect_button.setStyleSheet("background-color: lightgray;")
         self.connect_button.clicked.connect(self.connect_to_device)
-        self.layout.addWidget(self.connect_button)
-
-        self.axis_label = QLabel("Número do eixo:")
-        self.layout.addWidget(self.axis_label)
-
-        self.axis_input = QLineEdit()
-        self.axis_input.setText("1")  # Inicializa com o número do eixo 1
-        self.layout.addWidget(self.axis_input)
-
-        self.position_label = QLabel("Posição:")
-        self.layout.addWidget(self.position_label)
-
-        self.position_input = QLineEdit()
-        self.layout.addWidget(self.position_input)
-
-        self.move_to_button = QPushButton("Mover para a posição")
-        self.move_to_button.clicked.connect(self.move_to_position)
-        self.layout.addWidget(self.move_to_button)
-
-        self.move_relative_label = QLabel("Movimento relativo:")
-        self.layout.addWidget(self.move_relative_label)
-
-        self.move_relative_input = QLineEdit()
-        self.layout.addWidget(self.move_relative_input)
-
-        self.move_relative_button = QPushButton("Mover relativo")
-        self.move_relative_button.clicked.connect(self.move_relative_position)
-        self.layout.addWidget(self.move_relative_button)
-
-        self.current_position_label = QLabel("Posição atual do eixo:")
-        self.layout.addWidget(self.current_position_label)
-
-        self.current_position_output = QLabel("")
-        self.layout.addWidget(self.current_position_output)
-
-        self.update_position_button = QPushButton("Atualizar posição")
-        self.update_position_button.clicked.connect(self.update_position)
-        self.layout.addWidget(self.update_position_button)
-
-        self.custom_command_label = QLabel("Comando personalizado:")
-        self.layout.addWidget(self.custom_command_label)
-
-        self.custom_command_input = QLineEdit()
-        self.layout.addWidget(self.custom_command_input)
-
-        self.send_command_button = QPushButton("Enviar comando")
-        self.send_command_button.clicked.connect(self.send_custom_command)
-        self.layout.addWidget(self.send_command_button)
+        self.general_layout.addWidget(self.connect_button)
 
         self.timeout_label = QLabel("Timeout de desconexão (minutos):")
-        self.layout.addWidget(self.timeout_label)
+        self.general_layout.addWidget(self.timeout_label)
 
         self.timeout_input = QLineEdit()
         self.timeout_input.setText("20")  # Valor padrão de 20 minutos
-        self.layout.addWidget(self.timeout_input)
+        self.timeout_input.setStyleSheet("background-color: lightgray;")
+        self.general_layout.addWidget(self.timeout_input)
+
+        # Seção dos eixos
+        self.axis_frame = QFrame()
+        self.axis_frame.setStyleSheet("background-color: lightgray;")  # Cor de fundo do frame dos eixos
+        self.axis_frame.setFrameShape(QFrame.StyledPanel)
+        self.axis_layout = QHBoxLayout()  # Layout horizontal para os eixos
+        self.axis_frame.setLayout(self.axis_layout)
+        self.layout.addWidget(self.axis_frame)
+
+        # Eixo 1
+        self.axis_frame1 = QFrame()
+        self.axis_frame1.setStyleSheet("background-color: #e0f7e0;")  # Verde claro
+        self.axis_frame1.setFrameShape(QFrame.StyledPanel)
+        self.axis_layout1 = QVBoxLayout()
+        self.axis_frame1.setLayout(self.axis_layout1)
+        self.axis_layout.addWidget(self.axis_frame1)
+
+        self.axis1_label = QLabel("Eixo 1")
+        self.axis_layout1.addWidget(self.axis1_label)
+
+        self.axis1_position_label = QLabel("Posição:")
+        self.axis1_position_label.setStyleSheet("padding-right: 5px;")
+        self.axis_layout1.addWidget(self.axis1_position_label)
+
+        self.axis1_position_input = QLineEdit()
+        self.axis1_position_input.setStyleSheet("background-color: lightgray;")
+        self.axis_layout1.addWidget(self.axis1_position_input)
+
+        self.axis1_move_to_button = QPushButton("Mover para a posição")
+        self.axis1_move_to_button.setStyleSheet("background-color: lightgray;")
+        self.axis1_move_to_button.clicked.connect(self.move_to_position_axis1)
+        self.axis_layout1.addWidget(self.axis1_move_to_button)
+
+        self.axis1_move_relative_label = QLabel("Movimento relativo:")
+        self.axis1_move_relative_label.setStyleSheet("padding-right: 5px;")
+        self.axis_layout1.addWidget(self.axis1_move_relative_label)
+
+        self.axis1_move_relative_input = QLineEdit()
+        self.axis1_move_relative_input.setStyleSheet("background-color: lightgray;")
+        self.axis_layout1.addWidget(self.axis1_move_relative_input)
+
+        self.axis1_move_relative_button = QPushButton("Mover relativo")
+        self.axis1_move_relative_button.setStyleSheet("background-color: lightgray;")
+        self.axis1_move_relative_button.clicked.connect(self.move_relative_position_axis1)
+        self.axis_layout1.addWidget(self.axis1_move_relative_button)
+
+        self.axis1_current_position_label = QLabel("Posição atual do eixo:")
+        self.axis_layout1.addWidget(self.axis1_current_position_label)
+
+        self.axis1_current_position_output = QLabel("")
+        self.axis_layout1.addWidget(self.axis1_current_position_output)
+
+        self.axis1_update_position_button = QPushButton("Atualizar posição")
+        self.axis1_update_position_button.setStyleSheet("background-color: lightgray;")
+        self.axis1_update_position_button.clicked.connect(self.update_position_axis1)
+        self.axis_layout1.addWidget(self.axis1_update_position_button)
+
+        self.axis1_custom_command_label = QLabel("Comando personalizado:")
+        self.axis1_custom_command_label.setStyleSheet("padding-right: 5px;")
+        self.axis_layout1.addWidget(self.axis1_custom_command_label)
+
+        self.axis1_custom_command_input = QLineEdit()
+        self.axis1_custom_command_input.setStyleSheet("background-color: lightgray;")
+        self.axis_layout1.addWidget(self.axis1_custom_command_input)
+
+        self.axis1_send_command_button = QPushButton("Enviar comando")
+        self.axis1_send_command_button.setStyleSheet("background-color: lightgray;")
+        self.axis1_send_command_button.clicked.connect(self.send_custom_command_axis1)
+        self.axis_layout1.addWidget(self.axis1_send_command_button)
+
+        # Eixo 2
+        self.axis_frame2 = QFrame()
+        self.axis_frame2.setStyleSheet("background-color: #e0f7e0;")  # Verde claro
+        self.axis_frame2.setFrameShape(QFrame.StyledPanel)
+        self.axis_layout2 = QVBoxLayout()
+        self.axis_frame2.setLayout(self.axis_layout2)
+        self.axis_layout.addWidget(self.axis_frame2)
+
+        self.axis2_label = QLabel("Eixo 2")
+        self.axis_layout2.addWidget(self.axis2_label)
+
+        self.axis2_position_label = QLabel("Posição:")
+        self.axis2_position_label.setStyleSheet("padding-right: 5px;")
+        self.axis_layout2.addWidget(self.axis2_position_label)
+
+        self.axis2_position_input = QLineEdit()
+        self.axis2_position_input.setStyleSheet("background-color: lightgray;")
+        self.axis_layout2.addWidget(self.axis2_position_input)
+
+        self.axis2_move_to_button = QPushButton("Mover para a posição")
+        self.axis2_move_to_button.setStyleSheet("background-color: lightgray;")
+        self.axis2_move_to_button.clicked.connect(self.move_to_position_axis2)
+        self.axis_layout2.addWidget(self.axis2_move_to_button)
+
+        self.axis2_move_relative_label = QLabel("Movimento relativo:")
+        self.axis2_move_relative_label.setStyleSheet("padding-right: 5px;")
+        self.axis_layout2.addWidget(self.axis2_move_relative_label)
+
+        self.axis2_move_relative_input = QLineEdit()
+        self.axis2_move_relative_input.setStyleSheet("background-color: lightgray;")
+        self.axis_layout2.addWidget(self.axis2_move_relative_input)
+
+        self.axis2_move_relative_button = QPushButton("Mover relativo")
+        self.axis2_move_relative_button.setStyleSheet("background-color: lightgray;")
+        self.axis2_move_relative_button.clicked.connect(self.move_relative_position_axis2)
+        self.axis_layout2.addWidget(self.axis2_move_relative_button)
+
+        self.axis2_current_position_label = QLabel("Posição atual do eixo:")
+        self.axis_layout2.addWidget(self.axis2_current_position_label)
+
+        self.axis2_current_position_output = QLabel("")
+        self.axis_layout2.addWidget(self.axis2_current_position_output)
+
+        self.axis2_update_position_button = QPushButton("Atualizar posição")
+        self.axis2_update_position_button.setStyleSheet("background-color: lightgray;")
+        self.axis2_update_position_button.clicked.connect(self.update_position_axis2)
+        self.axis_layout2.addWidget(self.axis2_update_position_button)
+
+        self.axis2_custom_command_label = QLabel("Comando personalizado:")
+        self.axis2_custom_command_label.setStyleSheet("padding-right: 5px;")
+        self.axis_layout2.addWidget(self.axis2_custom_command_label)
+
+        self.axis2_custom_command_input = QLineEdit()
+        self.axis2_custom_command_input.setStyleSheet("background-color: lightgray;")
+        self.axis_layout2.addWidget(self.axis2_custom_command_input)
+
+        self.axis2_send_command_button = QPushButton("Enviar comando")
+        self.axis2_send_command_button.setStyleSheet("background-color: lightgray;")
+        self.axis2_send_command_button.clicked.connect(self.send_custom_command_axis2)
+        self.axis_layout2.addWidget(self.axis2_send_command_button)
+
+        # Configura a conexão com o dispositivo
+        self.device = None
 
     def connect_to_device(self):
-        choice = self.connection_combo.currentIndex()
-        timeout = int(self.timeout_input.text())
         try:
-            if choice == 0:
-                port = "/dev/ttyUSB0"
-                self.adapter = serial.Serial(port, baudrate=19200, bytesize=serial.EIGHTBITS, parity=serial.PARITY_NONE, stopbits=serial.STOPBITS_ONE, timeout=3, rtscts=True)
-            elif choice == 1:
-                port = "GPIB0::5::INSTR"
-                self.adapter = pyvisa.ResourceManager().open_resource(port)
-                self.adapter.write_termination = '\r'
-                self.adapter.read_termination = '\r\n'
-            else:
-                print("Escolha inválida.")
-                return
+            method = self.connection_combo.currentText()
+            timeout = int(self.timeout_input.text())
 
-            self.esp300 = ESP300(self.adapter, timeout)
-            print("Conectado ao ESP300.")
-            self.update_position()
+            if method.startswith("Serial"):
+                port = "/dev/ttyUSB0"  # Pode ser ajustado conforme necessário
+                self.device = ESP300(serial.Serial(port, baudrate=19200, parity=serial.PARITY_NONE, stopbits=serial.STOPBITS_ONE), timeout)
+            elif method.startswith("GPIB"):
+                resource_name = "GPIB0::5::INSTR"  # Pode ser ajustado conforme necessário
+                rm = pyvisa.ResourceManager()
+                self.device = ESP300(rm.open_resource(resource_name), timeout)
+
+            print("Conectado com sucesso.")
         except Exception as e:
-            print(f"Erro ao conectar ao ESP300: {e}")
+            print(f"Erro ao conectar: {e}")
 
-    def move_to_position(self):
-        if not hasattr(self, 'esp300'):
-            print("Erro: Não conectado ao ESP300.")
-            return
+    def move_to_position_axis1(self):
+        position = self.axis1_position_input.text()
+        if position:
+            self.device.move_to('1', position)
 
-        try:
-            axis = self.axis_input.text()
-            position = float(self.position_input.text())
-            self.esp300.move_to(axis, position)
-            self.update_position()
-        except Exception as e:
-            print(f"Erro: {e}")
+    def move_relative_position_axis1(self):
+        increment = self.axis1_move_relative_input.text()
+        if increment:
+            self.device.move_relative('1', increment)
 
-    def move_relative_position(self):
-        if not hasattr(self, 'esp300'):
-            print("Erro: Não conectado ao ESP300.")
-            return
+    def update_position_axis1(self):
+        position = self.device.get_position('1')
+        if position:
+            self.axis1_current_position_output.setText(position)
 
-        try:
-            axis = self.axis_input.text()
-            increment = float(self.move_relative_input.text())
-            self.esp300.move_relative(axis, increment)
-            self.update_position()
-        except Exception as e:
-            print(f"Erro: {e}")
+    def send_custom_command_axis1(self):
+        command = self.axis1_custom_command_input.text()
+        if command:
+            response = self.device.execute_command(command)
+            print(f"Resposta do comando: {response}")
 
-    def update_position(self):
-        if not hasattr(self, 'esp300'):
-            print("Erro: Não conectado ao ESP300.")
-            return
+    def move_to_position_axis2(self):
+        position = self.axis2_position_input.text()
+        if position:
+            self.device.move_to('2', position)
 
-        try:
-            axis = self.axis_input.text()
-            position = self.esp300.get_position(axis)
-            if position is not None:
-                self.current_position_output.setText(f"{position}")
-        except Exception as e:
-            print(f"Erro ao atualizar a posição: {e}")
+    def move_relative_position_axis2(self):
+        increment = self.axis2_move_relative_input.text()
+        if increment:
+            self.device.move_relative('2', increment)
 
-    def send_custom_command(self):
-        if not hasattr(self, 'esp300'):
-            print("Erro: Não conectado ao ESP300.")
-            return
+    def update_position_axis2(self):
+        position = self.device.get_position('2')
+        if position:
+            self.axis2_current_position_output.setText(position)
 
-        try:
-            command = self.custom_command_input.text()
-            response = self.esp300.execute_command(command)
-            if response is not None:
-                print(f"Resposta do comando: {response}")
-        except Exception as e:
-            print(f"Erro ao enviar comando: {e}")
+    def send_custom_command_axis2(self):
+        command = self.axis2_custom_command_input.text()
+        if command:
+            response = self.device.execute_command(command)
+            print(f"Resposta do comando: {response}")
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    main_window = MainWindow()
-    main_window.show()
+    window = MainWindow()
+    window.show()
     sys.exit(app.exec_())
 

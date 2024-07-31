@@ -1,5 +1,7 @@
 #!/usr/bin/python3
 
+import time
+
 import pyvisa
 from pymeasure.instruments import Instrument
 from pymeasure.adapters import VISAAdapter, SerialAdapter
@@ -16,6 +18,7 @@ class ESP300(Instrument):
     def move_to(self, axis, position):
         try:
             self.write(f"{axis}PA{position}")
+            self.write(f"{axis}WS")
         except Exception as e:
             print(f"Erro ao mover o eixo {axis} para a posição {position}: {e}")
 
@@ -121,10 +124,11 @@ def main():
         # Exemplo de uso
         esp300.enable_axis(1)
         esp300.move_to(1, 10)  # Move o eixo 1 para a posição 10
+        time.sleep(0.1)
         position = esp300.get_position(1)
         if position is not None:
             print(f"Posição atual do eixo 1: {position}")
-        esp300.disable_axis(1)
+        #esp300.disable_axis(1)
     except Exception as e:
         print(f"Erro durante a operação com o ESP300: {e}")
 

@@ -85,20 +85,24 @@ class MainWindow(QMainWindow):
         super().__init__()
 
         self.setWindowTitle("Controle do ESP300")
-        self.setGeometry(100, 100, 1000, 600)  # Ajustado o tamanho da janela para permitir mais espaço
+        self.setGeometry(200, 200, 1000, 450)  # Ajustado o tamanho da janela para ser menor
 
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
 
         self.layout = QVBoxLayout()
         self.central_widget.setLayout(self.layout)
-        self.central_widget.setStyleSheet("background-color: #778899;")
 
         # Seção geral
         self.general_frame = QFrame()
-        self.general_frame.setStyleSheet("background-color: #8FBC8F;")  # Cor de fundo do frame geral
+        self.general_frame.setStyleSheet("background-color: lightgray;")  # Cor de fundo do frame geral
         self.general_frame.setFrameShape(QFrame.StyledPanel)
+        
+        # Defina altura fixa e ajuste o layout
+        self.general_frame.setFixedHeight(160)  # Definir uma altura fixa para o frame geral
         self.general_layout = QVBoxLayout()
+        self.general_layout.setSpacing(2)  # Reduz o espaçamento entre widgets
+        self.general_layout.setContentsMargins(2, 2, 2, 2)  # Ajusta as margens ao redor do layout
         self.general_frame.setLayout(self.general_layout)
         self.layout.addWidget(self.general_frame)
 
@@ -106,75 +110,70 @@ class MainWindow(QMainWindow):
         self.general_layout.addWidget(self.connection_label)
 
         self.connection_combo = QComboBox()
-        self.connection_combo.setStyleSheet("background-color: lightgray;")
         self.connection_combo.addItem("Serial (/dev/ttyUSB0)")
         self.connection_combo.addItem("GPIB (GPIB0::5::INSTR)")
         self.general_layout.addWidget(self.connection_combo)
 
         self.connect_button = QPushButton("Conectar")
-        self.connect_button.setStyleSheet("background-color: gray;")
+        self.connect_button.setStyleSheet("background-color: lightgray;")
         self.connect_button.clicked.connect(self.connect_to_device)
         self.general_layout.addWidget(self.connect_button)
 
         self.timeout_label = QLabel("Timeout de desconexão (minutos):")
         self.general_layout.addWidget(self.timeout_label)
-        
 
         self.timeout_input = QLineEdit()
         self.timeout_input.setText("20")  # Valor padrão de 20 minutos
-        self.timeout_input.setStyleSheet("background-color: white;")
+        self.timeout_input.setStyleSheet("background-color: lightgray;")
         self.general_layout.addWidget(self.timeout_input)
+
+        # Novo rótulo para status de conexão
+        self.status_label = QLabel("Status de Conexão: Desconectado")
+        self.general_layout.addWidget(self.status_label)
 
         # Layout horizontal para os frames dos eixos
         self.axis_frame_layout = QHBoxLayout()
         self.layout.addLayout(self.axis_frame_layout)
+        self.layout.addStretch()  # Adiciona um espaço flexível no final do layout
 
         # Seção dos eixos
         self.axis_frame1 = QFrame()
-        self.axis_frame1.setStyleSheet("background-color: #8FBC8F;")  # Verde claro #e0f7e0
+        self.axis_frame1.setStyleSheet("background-color: #e0f7e0;")  # Verde claro
         self.axis_frame1.setFrameShape(QFrame.StyledPanel)
         self.axis_layout1 = QFormLayout()
         self.axis_frame1.setLayout(self.axis_layout1)
         self.axis_frame_layout.addWidget(self.axis_frame1)
 
-        self.axis1_title_label = QLabel("EIXO 1")
-        self.axis1_title_label.setAlignment(Qt.AlignRight)
-        self.axis1_position_label = QLabel("Posição")
+        self.axis1_position_label = QLabel("Posição:")
         self.axis1_position_input = QLineEdit()
-        self.axis1_position_input.setFixedWidth(150)
-        self.axis1_position_input.setStyleSheet("background-color: white;")
+        self.axis1_position_input.setFixedWidth(120)  # Ajuste a largura para menor
         self.axis1_move_to_button = QPushButton("Mover para a posição")
         self.axis1_move_to_button.clicked.connect(self.move_to_position_axis1)
-        self.axis1_move_to_button.setStyleSheet("background-color: gray;")
+        self.axis1_move_to_button.setStyleSheet("background-color: lightgray;")
 
-        self.axis1_move_relative_label = QLabel("Movimento relativo")
+        self.axis1_move_relative_label = QLabel("Movimento relativo:")
         self.axis1_move_relative_input = QLineEdit()
-        self.axis1_move_relative_input.setFixedWidth(150)
-        self.axis1_move_relative_input.setStyleSheet("background-color: white;")
+        self.axis1_move_relative_input.setFixedWidth(120)  # Ajuste a largura para menor
         self.axis1_move_relative_button = QPushButton("Mover relativo")
         self.axis1_move_relative_button.clicked.connect(self.move_relative_position_axis1)
-        self.axis1_move_relative_button.setStyleSheet("background-color: gray;")
+        self.axis1_move_relative_button.setStyleSheet("background-color: lightgray;")
 
-        self.axis1_current_position_label = QLabel("Posição atual do eixo")
+        self.axis1_current_position_label = QLabel("Posição atual do eixo:")
         self.axis1_current_position_output = QLabel("")
-        self.axis1_current_position_output.setFixedWidth(150)
-        self.axis1_current_position_output.setStyleSheet("background-color: white;")
         self.axis1_update_position_button = QPushButton("Atualizar posição")
         self.axis1_update_position_button.clicked.connect(self.update_position_axis1)
-        self.axis1_update_position_button.setStyleSheet("background-color: gray;")
+        self.axis1_update_position_button.setStyleSheet("background-color: lightgray;")
 
-        self.axis1_custom_command_label = QLabel("Comando personalizado")
+        self.axis1_custom_command_label = QLabel("Comando personalizado:")
         self.axis1_custom_command_input = QLineEdit()
-        self.axis1_custom_command_input.setFixedWidth(150)
-        self.axis1_custom_command_input.setStyleSheet("background-color: white;")
+        self.axis1_custom_command_input.setFixedWidth(120)  # Ajuste a largura para menor
         self.axis1_send_command_button = QPushButton("Enviar comando")
         self.axis1_send_command_button.clicked.connect(self.send_custom_command_axis1)
-        self.axis1_send_command_button.setStyleSheet("background-color: gray;")
+        self.axis1_send_command_button.setStyleSheet("background-color: lightgray;")
 
         self.axis1_command_output = QLabel("")
 
         # Adiciona widgets ao layout do eixo 1
-        self.axis_layout1.addRow(self.axis1_title_label)
         self.axis_layout1.addRow(self.axis1_position_label, self.axis1_position_input)
         self.axis_layout1.addRow(self.axis1_move_to_button)
         self.axis_layout1.addRow(self.axis1_move_relative_label, self.axis1_move_relative_input)
@@ -186,50 +185,42 @@ class MainWindow(QMainWindow):
         self.axis_layout1.addRow(self.axis1_command_output)
 
         self.axis_frame2 = QFrame()
-        self.axis_frame2.setStyleSheet("background-color: #8FBC8F")  # Verde claro #e0f7e0
+        self.axis_frame2.setStyleSheet("background-color: #e0f7e0;")  # Verde claro
         self.axis_frame2.setFrameShape(QFrame.StyledPanel)
         self.axis_layout2 = QFormLayout()
         self.axis_frame2.setLayout(self.axis_layout2)
         self.axis_frame_layout.addWidget(self.axis_frame2)
 
-        self.axis2_title_label = QLabel("EIXO 2")
-        self.axis2_title_label.setAlignment(Qt.AlignRight)
-        self.axis2_position_label = QLabel("Posição")
+        self.axis2_position_label = QLabel("Posição:")
         self.axis2_position_input = QLineEdit()
-        self.axis2_position_input.setStyleSheet("background-color: white;")
-        self.axis2_position_input.setFixedWidth(150)
+        self.axis2_position_input.setFixedWidth(120)  # Ajuste a largura para menor
         self.axis2_move_to_button = QPushButton("Mover para a posição")
         self.axis2_move_to_button.clicked.connect(self.move_to_position_axis2)
-        self.axis2_move_to_button.setStyleSheet("background-color: gray;")
+        self.axis2_move_to_button.setStyleSheet("background-color: lightgray;")
 
-        self.axis2_move_relative_label = QLabel("Movimento relativo")
+        self.axis2_move_relative_label = QLabel("Movimento relativo:")
         self.axis2_move_relative_input = QLineEdit()
-        self.axis2_move_relative_input.setStyleSheet("background-color: white;")
-        self.axis2_move_relative_input.setFixedWidth(150)
+        self.axis2_move_relative_input.setFixedWidth(120)  # Ajuste a largura para menor
         self.axis2_move_relative_button = QPushButton("Mover relativo")
         self.axis2_move_relative_button.clicked.connect(self.move_relative_position_axis2)
-        self.axis2_move_relative_button.setStyleSheet("background-color: gray;")
+        self.axis2_move_relative_button.setStyleSheet("background-color: lightgray;")
 
-        self.axis2_current_position_label = QLabel("Posição atual do eixo")
+        self.axis2_current_position_label = QLabel("Posição atual do eixo:")
         self.axis2_current_position_output = QLabel("")
-        self.axis2_current_position_output.setFixedWidth(150)
-        self.axis2_current_position_output.setStyleSheet("background-color: white;")
         self.axis2_update_position_button = QPushButton("Atualizar posição")
         self.axis2_update_position_button.clicked.connect(self.update_position_axis2)
-        self.axis2_update_position_button.setStyleSheet("background-color: gray;")
+        self.axis2_update_position_button.setStyleSheet("background-color: lightgray;")
 
-        self.axis2_custom_command_label = QLabel("Comando personalizado")
+        self.axis2_custom_command_label = QLabel("Comando personalizado:")
         self.axis2_custom_command_input = QLineEdit()
-        self.axis2_custom_command_input.setFixedWidth(150)
-        self.axis2_custom_command_input.setStyleSheet("background-color: white;")
+        self.axis2_custom_command_input.setFixedWidth(120)  # Ajuste a largura para menor
         self.axis2_send_command_button = QPushButton("Enviar comando")
         self.axis2_send_command_button.clicked.connect(self.send_custom_command_axis2)
-        self.axis2_send_command_button.setStyleSheet("background-color: gray;")
+        self.axis2_send_command_button.setStyleSheet("background-color: lightgray;")
 
         self.axis2_command_output = QLabel("")
 
         # Adiciona widgets ao layout do eixo 2
-        self.axis_layout2.addRow(self.axis2_title_label)
         self.axis_layout2.addRow(self.axis2_position_label, self.axis2_position_input)
         self.axis_layout2.addRow(self.axis2_move_to_button)
         self.axis_layout2.addRow(self.axis2_move_relative_label, self.axis2_move_relative_input)
@@ -254,13 +245,13 @@ class MainWindow(QMainWindow):
                 self.controller = ESP300(resource, timeout=20)
             else:
                 self.controller = None
-                print("Método de conexão não reconhecido.")
+                self.status_label.setText("Status de Conexão: Método de conexão não reconhecido.")
                 return
 
             self.controller.query("*IDN?")
-            print("Conectado com sucesso.")
+            self.status_label.setText("Status de Conexão: Conectado com sucesso.")
         except Exception as e:
-            print(f"Erro ao conectar: {e}")
+            self.status_label.setText(f"Status de Conexão: Erro ao conectar: {e}")
 
     def move_to_position_axis1(self):
         position = self.axis1_position_input.text()
@@ -270,7 +261,7 @@ class MainWindow(QMainWindow):
 
         try:
             self.controller.move_to("1", position)
-            self.axis1_current_position_output.setText(f">> {position}")
+            self.axis1_current_position_output.setText(f"Movendo eixo 1 para a posição {position}.")
         except Exception as e:
             self.axis1_command_output.setText(f"Erro: {e}")
 
@@ -289,7 +280,7 @@ class MainWindow(QMainWindow):
     def update_position_axis1(self):
         try:
             position = self.controller.get_position("1")
-            self.axis1_current_position_output.setText(f"{position}")
+            self.axis1_current_position_output.setText(f"Posição atual do eixo 1: {position}")
         except Exception as e:
             self.axis1_current_position_output.setText(f"Erro: {e}")
 
@@ -317,7 +308,7 @@ class MainWindow(QMainWindow):
 
         try:
             self.controller.move_to("2", position)
-            self.axis2_current_position_output.setText(f">> para {position}")
+            self.axis2_current_position_output.setText(f"Movendo eixo 2 para a posição {position}.")
         except Exception as e:
             self.axis2_command_output.setText(f"Erro: {e}")
 
@@ -336,7 +327,7 @@ class MainWindow(QMainWindow):
     def update_position_axis2(self):
         try:
             position = self.controller.get_position("2")
-            self.axis2_current_position_output.setText(f"{position}")
+            self.axis2_current_position_output.setText(f"Posição atual do eixo 2: {position}")
         except Exception as e:
             self.axis2_current_position_output.setText(f"Erro: {e}")
 
@@ -361,4 +352,3 @@ if __name__ == "__main__":
     window = MainWindow()
     window.show()
     sys.exit(app.exec_())
-

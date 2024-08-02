@@ -10,7 +10,7 @@ from PyQt5.QtCore import Qt
 class ESP300:
     def __init__(self, adapter, timeout):
         self.adapter = adapter
-        self.timeout = timeout * 60  # Converte minutos para segundos
+        self.timeout = timeout# * 60  # Converte minutos para segundos
         if isinstance(adapter, serial.Serial):
             self.adapter.timeout = self.timeout
         else:
@@ -109,7 +109,7 @@ class MainWindow(QMainWindow):
         self.general_layout.addWidget(self.connection_label)
 
         self.connection_combo = QComboBox()
-        self.connection_combo.setStyleSheet("background-color: lightgray;")
+        self.connection_combo.setStyleSheet("background-color: white;")
         self.connection_combo.addItem("Serial (/dev/ttyUSB0)")
         self.connection_combo.addItem("GPIB (GPIB0::5::INSTR)")
         self.general_layout.addWidget(self.connection_combo)
@@ -119,10 +119,10 @@ class MainWindow(QMainWindow):
         self.connect_button.clicked.connect(self.connect_to_device)
         self.general_layout.addWidget(self.connect_button)
 
-        self.timeout_label = QLabel("Timeout de desconexão (minutos):")
+        self.timeout_label = QLabel("Timeout de desconexão (segundos):")
         self.general_layout.addWidget(self.timeout_label)
         self.timeout_input = QLineEdit()
-        self.timeout_input.setText("20")  # Valor padrão de 20 minutos
+        self.timeout_input.setText("5")  # Valor padrão de 5 segundos
         self.timeout_input.setStyleSheet("background-color: white;")
         self.general_layout.addWidget(self.timeout_input)
 
@@ -145,41 +145,54 @@ class MainWindow(QMainWindow):
         self.axis1_title_label.setAlignment(Qt.AlignCenter)
         self.axis1_position_label = QLabel("Posição")
         self.axis1_position_input = QLineEdit()
-        self.axis1_position_input.setAlignment(Qt.AlignVCenter)
-        self.axis1_position_input.setFixedWidth(150)
+        #self.axis1_position_input.setFixedWidth(150)
         self.axis1_position_input.setFixedHeight(25)
         self.axis1_position_input.setStyleSheet("background-color: white; border: 1px solid black;")
         self.axis1_move_to_button = QPushButton("Mover para a posição")
+        #self.axis1_move_to_button.setFixedWidth(150)
+        #self.axis1_move_to_button.setFixedHeight(25)
         self.axis1_move_to_button.clicked.connect(self.move_to_position_axis1)
         self.axis1_move_to_button.setStyleSheet("background-color: gray;")
+
+
+        # Criar um layout horizontal para o botão e centralizá-lo
+        button_layout = QHBoxLayout()
+        button_layout.addWidget(self.axis1_move_to_button)
+        button_layout.setAlignment(Qt.AlignCenter)
 
         self.axis1_move_relative_label = QLabel("Movimento relativo")
         self.axis1_move_relative_input = QLineEdit()
         self.axis1_move_relative_input.setAlignment(Qt.AlignVCenter)
-        self.axis1_move_relative_input.setFixedWidth(150)
+        #self.axis1_move_relative_input.setFixedWidth(150)
         self.axis1_move_relative_input.setFixedHeight(25)
         self.axis1_move_relative_input.setStyleSheet("background-color: white; border: 1px solid black;")
         self.axis1_move_relative_button = QPushButton("Mover relativo")
+        #self.axis1_move_relative_button.setFixedWidth(150)
+        #self.axis1_move_relative_button.setFixedHeight(25)
         self.axis1_move_relative_button.clicked.connect(self.move_relative_position_axis1)
         self.axis1_move_relative_button.setStyleSheet("background-color: gray;")
 
         self.axis1_current_position_label = QLabel("Posição atual do eixo")
         self.axis1_current_position_output = QLabel("")
         self.axis1_current_position_output.setAlignment(Qt.AlignVCenter)
-        self.axis1_current_position_output.setFixedWidth(150)
+        #self.axis1_current_position_output.setFixedWidth(150)
         self.axis1_current_position_output.setFixedHeight(25)
         self.axis1_current_position_output.setStyleSheet("background-color: white; border: 1px solid black;")
         self.axis1_update_position_button = QPushButton("Atualizar posição")
+        #self.axis1_update_position_button.setFixedWidth(150)
+        #self.axis1_update_position_button.setFixedHeight(25)
         self.axis1_update_position_button.clicked.connect(self.update_position_axis1)
         self.axis1_update_position_button.setStyleSheet("background-color: gray;")
 
         self.axis1_custom_command_label = QLabel("Comando personalizado")
         self.axis1_custom_command_input = QLineEdit()
         self.axis1_custom_command_input.setAlignment(Qt.AlignVCenter)
-        self.axis1_custom_command_input.setFixedWidth(150)
+        #self.axis1_custom_command_input.setFixedWidth(150)
         self.axis1_custom_command_input.setFixedHeight(25)
         self.axis1_custom_command_input.setStyleSheet("background-color: white; border: 1px solid black;")
         self.axis1_send_command_button = QPushButton("Enviar comando")
+        #self.axis1_send_command_button.setFixedWidth(150)
+        #self.axis1_send_command_button.setFixedHeight(25)
         self.axis1_send_command_button.clicked.connect(self.send_custom_command_axis1)
         self.axis1_send_command_button.setStyleSheet("background-color: gray;")
 
@@ -209,40 +222,48 @@ class MainWindow(QMainWindow):
         self.axis2_position_label = QLabel("Posição")
         self.axis2_position_input = QLineEdit()
         self.axis2_position_input.setAlignment(Qt.AlignVCenter)
-        self.axis2_position_input.setFixedWidth(150)
+        #self.axis2_position_input.setFixedWidth(150)
         self.axis2_position_input.setFixedHeight(25)
         self.axis2_position_input.setStyleSheet("background-color: white; border: 1px solid black;")
         self.axis2_move_to_button = QPushButton("Mover para a posição")
+        #self.axis2_move_to_button.setFixedWidth(150)
+        #self.axis2_move_to_button.setFixedHeight(25)
         self.axis2_move_to_button.clicked.connect(self.move_to_position_axis2)
         self.axis2_move_to_button.setStyleSheet("background-color: gray;")
 
         self.axis2_move_relative_label = QLabel("Movimento relativo")
         self.axis2_move_relative_input = QLineEdit()
         self.axis2_move_relative_input.setAlignment(Qt.AlignVCenter)
-        self.axis2_move_relative_input.setFixedWidth(150)
+        #self.axis2_move_relative_input.setFixedWidth(150)
         self.axis2_move_relative_input.setFixedHeight(25)
         self.axis2_move_relative_input.setStyleSheet("background-color: white; border: 1px solid black;")
         self.axis2_move_relative_button = QPushButton("Mover relativo")
+        #self.axis2_move_relative_button.setFixedWidth(150)
+        #self.axis2_move_relative_button.setFixedHeight(25)
         self.axis2_move_relative_button.clicked.connect(self.move_relative_position_axis2)
         self.axis2_move_relative_button.setStyleSheet("background-color: gray;")
 
         self.axis2_current_position_label = QLabel("Posição atual do eixo")
         self.axis2_current_position_output = QLabel("")
         self.axis2_current_position_output.setAlignment(Qt.AlignVCenter)
-        self.axis2_current_position_output.setFixedWidth(150)
+        #self.axis2_current_position_output.setFixedWidth(150)
         self.axis2_current_position_output.setFixedHeight(25)
         self.axis2_current_position_output.setStyleSheet("background-color: white; border: 1px solid black;")
         self.axis2_update_position_button = QPushButton("Atualizar posição")
+        #self.axis2_update_position_button.setFixedWidth(150)
+        #self.axis2_update_position_button.setFixedHeight(25)
         self.axis2_update_position_button.clicked.connect(self.update_position_axis2)
         self.axis2_update_position_button.setStyleSheet("background-color: gray;")
 
         self.axis2_custom_command_label = QLabel("Comando personalizado")
         self.axis2_custom_command_input = QLineEdit()
         self.axis2_custom_command_input.setAlignment(Qt.AlignVCenter)
-        self.axis2_custom_command_input.setFixedWidth(150)
+        #self.axis2_custom_command_input.setFixedWidth(150)
         self.axis2_custom_command_input.setFixedHeight(25)
         self.axis2_custom_command_input.setStyleSheet("background-color: white; border: 1px solid black;")
         self.axis2_send_command_button = QPushButton("Enviar comando")
+        #self.axis2_send_command_button.setFixedWidth(150)
+        #self.axis2_send_command_button.setFixedHeight(25)
         self.axis2_send_command_button.clicked.connect(self.send_custom_command_axis2)
         self.axis2_send_command_button.setStyleSheet("background-color: gray;")
 

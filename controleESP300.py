@@ -84,8 +84,14 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        self.setWindowTitle("Controle do ESP300")
-        self.setGeometry(100, 100, 700, 450)  # Ajustado o tamanho da janela para permitir mais espaço
+        self.setWindowTitle("CONTROLE DO ESP300")
+        self.setGeometry(100, 100, 680, 500)  # Ajustado o tamanho da janela para permitir mais espaço
+
+        # Get the current window flags
+        flags = self.windowFlags()
+
+        # Set the window flags to exclude the maximize button
+        self.setWindowFlags(flags & ~Qt.WindowMaximizeButtonHint)
 
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
@@ -96,12 +102,12 @@ class MainWindow(QMainWindow):
 
         # Seção geral
         self.general_frame = QFrame()
-        self.general_frame.setStyleSheet("background-color: #8FBC9F;")  # Cor de fundo do frame geral
+        self.general_frame.setStyleSheet("background-color: #6699CC;")  # Cor de fundo do frame geral
         self.general_frame.setFrameShape(QFrame.StyledPanel)
         #self.general_frame.setFixedHeight(170)  # Ajustado para altura menor
         self.general_layout = QVBoxLayout()
         self.general_layout.setContentsMargins(2, 2, 2, 2)  # Margens menores
-        self.general_layout.setSpacing(10)  # Espaçamento menor entre os widgets
+        self.general_layout.setSpacing(5)  # Espaçamento menor entre os widgets
         self.general_layout.setAlignment(Qt.AlignHCenter)
         self.general_frame.setLayout(self.general_layout)
         self.layout.addWidget(self.general_frame)
@@ -151,7 +157,7 @@ class MainWindow(QMainWindow):
 
     def create_axis_frame(self, title, axis_number):
         axis_frame = QFrame()
-        axis_frame.setStyleSheet("background-color: #8FBC9F;")  # Verde claro #e0f7e0
+        axis_frame.setStyleSheet("background-color: #6699CC;")  # Verde claro #e0f7e0
         axis_frame.setFrameShape(QFrame.StyledPanel)
         axis_layout = QVBoxLayout()
         axis_layout.setAlignment(Qt.AlignHCenter)
@@ -206,7 +212,7 @@ class MainWindow(QMainWindow):
         send_command_button.clicked.connect(lambda: self.send_custom_command(axis_number))
         send_command_button.setStyleSheet("background-color: gray;")
 
-        current_position_label = QLabel("POSIÇÃO ATUAL DO EIXO")
+        current_position_label = QLabel("POSIÇÃO DO EIXO")
         current_position_output = QLabel("")
         current_position_label.setAlignment(Qt.AlignHCenter)
         current_position_output.setFixedHeight(25)

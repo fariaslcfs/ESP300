@@ -105,18 +105,27 @@ class MainWindow(QMainWindow):
         self.main_frame_layout = QHBoxLayout()
         self.layout.addLayout(self.main_frame_layout)
 
-        # Seção geral (à esquerda)
+        # Seção geral
         self.general_frame = QFrame()
         self.general_frame.setStyleSheet("background-color: #6699CC;")  # Cor de fundo do frame geral
         self.general_frame.setFrameShape(QFrame.StyledPanel)
         self.general_layout = QVBoxLayout()
+
+        # Adiciona a imagem
+        self.image_label = QLabel()
+        self.general_layout.addSpacing(10)
+        self.image_label.setAlignment(Qt.AlignHCenter)
+        pixmap = QPixmap('./logoIEAv.png')  # Substitua pelo caminho da sua imagem
+        self.image_label.setPixmap(pixmap)
+        self.general_layout.addWidget(self.image_label)
+
         self.general_layout.setContentsMargins(2, 2, 2, 2)  # Margens menores
         self.general_layout.setSpacing(5)  # Espaçamento menor entre os widgets
         self.general_layout.setAlignment(Qt.AlignHCenter)
         self.general_frame.setLayout(self.general_layout)
         self.main_frame_layout.addWidget(self.general_frame)
 
-        self.connection_label = QLabel("\nMÉTODO DE CONEXÃO")
+        self.connection_label = QLabel("MÉTODO DE CONEXÃO")
         self.connection_label.setAlignment(Qt.AlignHCenter)
         self.general_layout.addWidget(self.connection_label)
 
@@ -143,25 +152,9 @@ class MainWindow(QMainWindow):
         self.timeout_input.setStyleSheet("background-color: white;")
         self.general_layout.addWidget(self.timeout_input)
 
-        self.connection_status_label = QLabel("\nStatus da conexão: Não conectado")  # Inicializa com status de não conectado
+        self.connection_status_label = QLabel("Status da conexão: Não conectado")  # Inicializa com status de não conectado
         self.connection_status_label.setAlignment(Qt.AlignHCenter)
         self.general_layout.addWidget(self.connection_status_label)
-
-        # Seção da imagem (à direita)
-        self.image_frame = QFrame()
-        self.image_frame.setStyleSheet("background-color: #6699CC;")  # Cor de fundo do frame da imagem
-        self.image_frame.setFrameShape(QFrame.StyledPanel)
-        self.image_layout = QVBoxLayout()
-        self.image_layout.setContentsMargins(2, 2, 2, 2)  # Margens menores
-        self.image_layout.setSpacing(5)  # Espaçamento menor entre os widgets
-        self.image_frame.setLayout(self.image_layout)
-        self.main_frame_layout.addWidget(self.image_frame)
-
-        # Adiciona a imagem
-        self.image_label = QLabel()
-        pixmap = QPixmap('./logoIEAv.png')  # Substitua pelo caminho da sua imagem
-        self.image_label.setPixmap(pixmap)
-        self.image_layout.addWidget(self.image_label)
 
         # Layout horizontal para os frames dos eixos
         self.axis_frame_layout = QHBoxLayout()
@@ -229,15 +222,18 @@ class MainWindow(QMainWindow):
         custom_command_button.clicked.connect(lambda: self.send_custom_command(axis_number))
         custom_command_button.setStyleSheet("background-color: gray;")
 
-        axis_layout.addWidget(position_label)
+        #axis_layout.addWidget(position_label)
         axis_layout.addWidget(position_input)
         axis_layout.addWidget(move_to_button)
-        axis_layout.addWidget(move_relative_label)
+        axis_layout.addSpacing(15)
+        #axis_layout.addWidget(move_relative_label)
         axis_layout.addWidget(move_relative_input)
         axis_layout.addWidget(move_relative_button)
-        axis_layout.addWidget(custom_command_label)
+        axis_layout.addSpacing(15)
+        #xis_layout.addWidget(custom_command_label)
         axis_layout.addWidget(custom_command_input)
         axis_layout.addWidget(custom_command_button)
+        axis_layout.addSpacing(22)
 
     def connect_to_device(self):
         connection_type = self.connection_combo.currentText()

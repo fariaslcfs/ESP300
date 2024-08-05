@@ -37,6 +37,10 @@ def test_gpib_commands():
 
     except pyvisa.errors.VisaIOError as e:
         print(f"Erro de comunicação: {e}")
+    finally:
+        # Garante que o recurso será fechado
+        resource.close()
 
 if __name__ == "__main__":
     test_gpib_commands()
+

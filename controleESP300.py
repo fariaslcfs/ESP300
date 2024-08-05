@@ -4,8 +4,9 @@ import sys
 import time
 import pyvisa
 import serial
-from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLineEdit, QLabel, QComboBox, QFrame
+from concurrent.futures import ThreadPoolExecutor
 from PyQt5.QtGui import QPixmap
+from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLineEdit, QLabel, QComboBox, QFrame
 from PyQt5.QtCore import Qt
 
 class ESP300:
@@ -23,7 +24,7 @@ class ESP300:
             if isinstance(self.resource, serial.Serial):
                 command = command if command.endswith('\r') else command + '\r'
                 self.resource.write(command.encode())
-                time.sleep(1)  # Atraso aumentado para permitir o processamento do comando
+                time.sleep(1)  # Atraso para permitir o processamento do comando
                 response = self.resource.read_until(b'\r\n').decode().strip()
             else:
                 response = self.resource.query(command)
@@ -61,7 +62,10 @@ class ESP300:
         print(f"Comando {axis}WS enviado.")
 
     def get_position(self, axis):
-        return self.query(f"{axis}TP?")
+        response = self.query(f"{axis}TP?")
+        if response is not None:
+            return response.strip()  # Remove espaços extras se houver
+        return "Erro"
 
     def execute_command(self, command):
         return self.query(command)
@@ -147,12 +151,13 @@ class MainWindow(QMainWindow):
         self.timeout_input = QLineEdit()
         self.timeout_input.setFixedHeight(25)
         self.timeout_input.setFixedWidth(250)
-        self.timeout_input.setPlaceholderText("Insira o timeout em segundos (5)")
+        self.timeout_input.setPlaceholderText("Timeout em (s) Padrão é 5")
         self.timeout_input.setAlignment(Qt.AlignHCenter)
         self.timeout_input.setStyleSheet("background-color: white;")
         self.general_layout.addWidget(self.timeout_input)
 
-        self.connection_status_label = QLabel("Status da conexão: Não conectado")  # Inicializa com status de não conectado
+        self.connection_status_label = QLabel("Status da conexão: Não conectado") 
+        self.connection_status_label.setStyleSheet("background-color: #DAA520") # Inicializa com status de não conectado
         self.connection_status_label.setAlignment(Qt.AlignHCenter)
         self.general_layout.addWidget(self.connection_status_label)
 
@@ -161,13 +166,17 @@ class MainWindow(QMainWindow):
         self.layout.addLayout(self.axis_frame_layout)
 
         # Seção dos eixos
-        self.create_axis_frame("EIXO 1\n", 1)
-        self.create_axis_frame("EIXO 2\n", 2)
-        self.create_axis_frame("EIXO 3\n", 3)
+        self.create_axis_frame("EIXO 1", 1)
+        self.create_axis_frame("EIXO 2", 2)
+        self.create_axis_frame("EIXO 3", 3)
+
+        # Cria um executor para tarefas paralelas
+        self.executor = ThreadPoolExecutor(max_workers=1)
+        self.update_futures = {}
 
     def create_axis_frame(self, title, axis_number):
         axis_frame = QFrame()
-        axis_frame.setStyleSheet("background-color: #6699CC;")  # Verde claro #e0f7e0
+        axis_frame.setStyleSheet("background-color: #6699CC;")
         axis_frame.setFrameShape(QFrame.StyledPanel)
         axis_layout = QVBoxLayout()
         axis_layout.setAlignment(Qt.AlignHCenter)
@@ -180,8 +189,12 @@ class MainWindow(QMainWindow):
         title_label.setAlignment(Qt.AlignHCenter)
         axis_layout.addWidget(title_label)
 
-        position_label = QLabel("POSIÇÃO")
+        current_position_display = QLabel("POSIÇÃO ATUAL: ")
+        current_position_display.setObjectName(f"eixo{axis_number}_posicao_atual")
+        current_position_display.setAlignment(Qt.AlignHCenter)
+
         position_input = QLineEdit()
+        position_input.setObjectName(f"eixo{axis_number}_posicao_input")
         position_input.setPlaceholderText("Insira a posição absoluta")
         position_input.setFixedHeight(25)
         position_input.setFixedWidth(250)
@@ -190,89 +203,107 @@ class MainWindow(QMainWindow):
         move_to_button = QPushButton("MOVIMENTO ABSOLUTO")
         move_to_button.setFixedWidth(position_input.width())
         move_to_button.setFixedHeight(25)
-        move_to_button.setFixedWidth(250)
         move_to_button.clicked.connect(lambda: self.move_to_position(axis_number))
         move_to_button.setStyleSheet("background-color: gray;")
 
-        move_relative_label = QLabel("MOVIMENTO RELATIVO")
         move_relative_input = QLineEdit()
+        move_relative_input.setObjectName(f"eixo{axis_number}_mov_relativo_input")
         move_relative_input.setPlaceholderText("Insira a posição relativa")
         move_relative_input.setFixedHeight(25)
         move_relative_input.setFixedWidth(250)
         move_relative_input.setStyleSheet("background-color: white; border: 1px solid black;")
-        
+
         move_relative_button = QPushButton("MOVIMENTO RELATIVO")
-        move_relative_button.setFixedWidth(position_input.width())
+        move_relative_button.setFixedWidth(move_relative_input.width())
         move_relative_button.setFixedHeight(25)
-        move_relative_button.setFixedWidth(250)
         move_relative_button.clicked.connect(lambda: self.move_relative_position(axis_number))
         move_relative_button.setStyleSheet("background-color: gray;")
 
-        custom_command_label = QLabel("COMANDO LIVRE")
-        custom_command_input = QLineEdit()
-        custom_command_input.setPlaceholderText("Insira o comando")
-        custom_command_input.setFixedHeight(25)
-        custom_command_input.setFixedWidth(250)
-        custom_command_input.setStyleSheet("background-color: white; border: 1px solid black;")
+        send_command_input = QLineEdit()
+        send_command_input.setObjectName(f"eixo{axis_number}_comando_input")
+        send_command_input.setPlaceholderText("Insira comando")
+        send_command_input.setFixedHeight(25)
+        send_command_input.setFixedWidth(250)
+        send_command_input.setStyleSheet("background-color: white; border: 1px solid black;")
 
-        custom_command_button = QPushButton("ENVIAR COMANDO")
-        custom_command_button.setFixedWidth(position_input.width())
-        custom_command_button.setFixedHeight(25)
-        custom_command_button.setFixedWidth(250)
-        custom_command_button.clicked.connect(lambda: self.send_custom_command(axis_number))
-        custom_command_button.setStyleSheet("background-color: gray;")
+        send_command_button = QPushButton("ENVIAR COMANDO")
+        send_command_button.setFixedWidth(send_command_input.width())
+        send_command_button.setFixedHeight(25)
+        send_command_button.clicked.connect(lambda: self.send_command(axis_number))
+        send_command_button.setStyleSheet("background-color: gray;")
 
-        #axis_layout.addWidget(position_label)
+        update_button = QPushButton("ATUALIZAR POSIÇÃO")
+        update_button.setFixedWidth(250)
+        update_button.setFixedHeight(25)
+        update_button.clicked.connect(lambda: self.update_position_label(axis_number))
+        update_button.setStyleSheet("background-color: gray;")
+
+        axis_layout.addSpacing(10)
+        axis_layout.addWidget(current_position_display)
+        axis_layout.addSpacing(10)
         axis_layout.addWidget(position_input)
         axis_layout.addWidget(move_to_button)
-        axis_layout.addSpacing(15)
-        #axis_layout.addWidget(move_relative_label)
+        axis_layout.addSpacing(10)
         axis_layout.addWidget(move_relative_input)
         axis_layout.addWidget(move_relative_button)
-        axis_layout.addSpacing(15)
-        #xis_layout.addWidget(custom_command_label)
-        axis_layout.addWidget(custom_command_input)
-        axis_layout.addWidget(custom_command_button)
-        axis_layout.addSpacing(22)
+        axis_layout.addSpacing(10)
+        axis_layout.addWidget(send_command_input)
+        axis_layout.addWidget(send_command_button)
+        axis_layout.addSpacing(25)
+        axis_layout.addWidget(update_button)
 
     def connect_to_device(self):
-        connection_type = self.connection_combo.currentText()
-        timeout = float(self.timeout_input.text()) if self.timeout_input.text() else 5
+        connection_method = self.connection_combo.currentText()
+        timeout = int(self.timeout_input.text()) if self.timeout_input.text().isdigit() else 5
 
-        if connection_type.startswith("Serial"):
-            port = connection_type.split(" ")[1]
-            self.adapter = serial.Serial(port, baudrate=19200, timeout=timeout)
-            self.device = ESP300(self.adapter, timeout)
-            self.connection_status_label.setText("Status da conexão: Conectado via Serial")
-        elif connection_type.startswith("GPIB"):
-            resource_name = connection_type.split(" ")[0]
-            rm = pyvisa.ResourceManager()
-            self.adapter = rm.open_resource(resource_name)
-            self.device = ESP300(self.adapter, timeout)
-            self.connection_status_label.setText("Status da conexão: Conectado via GPIB")
+        if connection_method.startswith("Serial"):
+            port = "/dev/ttyUSB0"  # Alterar conforme necessário
+            self.serial_connection = serial.Serial(port, baudrate=19200, timeout=timeout)
+            self.device = ESP300(self.serial_connection, timeout)
         else:
-            self.connection_status_label.setText("Método de conexão não suportado")
+            rm = pyvisa.ResourceManager()
+            self.gpib_connection = rm.open_resource("GPIB0::5::INSTR")
+            self.device = ESP300(self.gpib_connection, timeout)
+
+        self.connection_status_label.setText("Status da conexão: Conectado")
+        self.connection_status_label.setStyleSheet("background-color: #32CD32")  # Verde para conectado
 
     def move_to_position(self, axis_number):
-        position_input = self.findChild(QLineEdit, f"eixo{axis_number}_posicao_input")
-        position = position_input.text()
+        position = self.findChild(QLineEdit, f"eixo{axis_number}_posicao_input").text()
         if position:
-            self.device.move_to(f"#{axis_number}", position)
+            self.device.move_to(f"{axis_number}", position)
+            self.check_motor_status(axis_number)
 
     def move_relative_position(self, axis_number):
-        increment_input = self.findChild(QLineEdit, f"eixo{axis_number}_mov_relativo_input")
-        increment = increment_input.text()
+        increment = self.findChild(QLineEdit, f"eixo{axis_number}_mov_relativo_input").text()
         if increment:
-            self.device.move_relative(f"#{axis_number}", increment)
+            self.device.move_relative(f"{axis_number}", increment)
+            self.check_motor_status(axis_number)
 
-    def send_custom_command(self, axis_number):
-        command_input = self.findChild(QLineEdit, f"eixo{axis_number}_comando_input")
-        command = command_input.text()
+    def send_command(self, axis_number):
+        command = self.findChild(QLineEdit, f"eixo{axis_number}_comando_input").text()
         if command:
-            self.device.execute_command(command)
+            response = self.device.execute_command(command)
+            self.findChild(QLabel, f"eixo{axis_number}_posicao_atual").setText(f"Resposta do comando: {response}")
+
+    def check_motor_status(self, axis_number):
+        def check_status():
+            while True:
+                status = self.device.query(f"{axis_number}MD")
+                if status == "1":
+                    self.update_position_label(axis_number)
+                    break
+                time.sleep(1)
+
+        future = self.executor.submit(check_status)
+        self.update_futures[axis_number] = future
+
+    def update_position_label(self, axis_number):
+        position = self.device.get_position(f"{axis_number}")
+        self.findChild(QLabel, f"eixo{axis_number}_posicao_atual").setText(f"POSIÇÃO ATUAL: {position}")
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    main_window = MainWindow()
-    main_window.show()
+    window = MainWindow()
+    window.show()
     sys.exit(app.exec_())
